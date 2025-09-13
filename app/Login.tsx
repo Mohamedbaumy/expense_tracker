@@ -1,13 +1,56 @@
-import { Link } from "expo-router";
-import React from "react";
+import { SESSION_KEY } from "@/src/db/database";
+import { usersTable } from "@/src/db/schema";
+import { useMutation } from "@tanstack/react-query";
+import { Link, Redirect, router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import React, { useState } from "react";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { Image, Text, View } from "react-native";
 import Button from "../src/components/ui/Button";
 import Input from "../src/components/ui/Input";
+import { FullScreenLoading } from "../src/components/ui/Loading";
+import { login } from "../src/server/user";
+
+type Inputs = {
+  username: string;
+  password: string;
+};
 
 const Login = () => {
-  const handleCreateAccount = () => {
-    console.log("Create Account");
+  const session = SecureStore.getItem(SESSION_KEY);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Inputs>();
+
+  const {
+    mutate: loginMutation,
+    isPending,
+    isPaused,
+  } = useMutation({
+    mutationFn: login,
+    onSuccess: () => {
+      router.push("/");
+    },
+    onError: (error) => {
+      console.error("Error logging in:", error);
+      setIsLoading(false);
+    },
+  });
+  const handleCreateAccount: SubmitHandler<Inputs> = (data) => {
+    setIsLoading(true);
+    loginMutation(data as typeof usersTable.$inferSelect);
   };
+  if (session) {
+    return <Redirect href="/" />;
+  }
+
+  if (isPending || isPaused || isLoading) {
+    return <FullScreenLoading message="Logging in..." />;
+  }
 
   return (
     <View className="flex-1 bg-background">
@@ -22,9 +65,34 @@ const Login = () => {
         <Text className="text-foreground text-4xl font-bold text-center">
           Welcome Back
         </Text>
-        <Input label="Email" type="email" />
-        <Input label="Password" type="password" />
-        <Button title="Sign in" onPress={handleCreateAccount} />
+        <Controller
+          control={control}
+          name="username"
+          render={({ field }) => (
+            <Input
+              label="Username"
+              value={field.value}
+              onChangeText={field.onChange}
+              error={errors.username?.message}
+              keyboardType="default"
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="password"
+          render={({ field }) => (
+            <Input
+              label="Password"
+              type="password"
+              value={field.value}
+              onChangeText={field.onChange}
+              error={errors.password?.message}
+              keyboardType="default"
+            />
+          )}
+        />
+        <Button title="Sign in" onPress={handleSubmit(handleCreateAccount)} />
         <Text className="text-foreground text-center text-base">
           Don&apos;t have an account?{" "}
           <Link href="/Signup">

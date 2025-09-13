@@ -1,11 +1,31 @@
 import Transactions from "@/src/components/ui/Transactions";
+import { SESSION_KEY } from "@/src/db/database";
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
-import { Image, Text, View } from "react-native";
+import { useQuery } from "@tanstack/react-query";
+import { Link, Redirect, router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import { Image, Pressable, Text, View } from "react-native";
 import Button from "../src/components/ui/Button";
 import StaticCard from "../src/components/ui/StaticCard";
-
+import { getUser } from "../src/server/user";
 export default function Index() {
+  const session = SecureStore.getItem(SESSION_KEY);
+
+  const { data: user } = useQuery({
+    queryKey: ["user", session],
+    queryFn: () => getUser(parseInt(session ?? "0")),
+    enabled: !!session,
+  });
+
+  const logout = async () => {
+    await SecureStore.deleteItemAsync(SESSION_KEY);
+    router.push("/Login");
+  };
+
+  if (!session) {
+    return <Redirect href="/Login" />;
+  }
+
   return (
     <View className="flex-1 bg-background">
       <View className="flex-row items-center justify-between p-4">
@@ -17,7 +37,7 @@ export default function Index() {
           />
           <View>
             <Text className="text-muted text-base font-semibold">Welcome</Text>
-            <Text className="text-foreground text-xl">Business Name</Text>
+            <Text className="text-foreground text-xl">{user?.username}</Text>
           </View>
         </View>
 
@@ -33,9 +53,9 @@ export default function Index() {
               className="rounded-full px-4 py-2"
             />
           </Link>
-          <Link href="/Login" className="p-2">
+          <Pressable className="p-2" onPress={logout}>
             <Ionicons name="log-out-outline" size={24} color="#8B593E" />
-          </Link>
+          </Pressable>
         </View>
       </View>
 

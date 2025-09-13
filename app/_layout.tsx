@@ -1,17 +1,15 @@
-import {
-  DATABASE_NAME,
-  useDatabaseSetup,
-} from "@/src/db/migrations/setupMigrations";
+import { FullScreenLoading } from "@/src/components/ui/Loading";
+import { DATABASE_NAME } from "@/src/db/database";
+import { useDatabaseSetup } from "@/src/db/migrations/setupMigrations";
 import { QueryProvider } from "@/src/providers/QueryProvider";
 import { Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { Suspense } from "react";
-import { ActivityIndicator, StatusBar, Text, View } from "react-native";
+import { StatusBar, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
-
 export default function RootLayout() {
-  const { db, isLoading, migrationError, success } = useDatabaseSetup();
+  const { isLoading, migrationError, success } = useDatabaseSetup();
 
   if (migrationError) {
     return (
@@ -46,37 +44,25 @@ export default function RootLayout() {
     );
   }
 
-  // Show loading while migrations are running
   if (isLoading) {
     return (
       <SafeAreaProvider>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" />
-          <Text style={{ marginTop: 10 }}>Setting up database...</Text>
-        </View>
+        <FullScreenLoading message="Setting up database..." />
       </SafeAreaProvider>
     );
   }
 
-  // Only proceed if migrations are successful
-  if (!success || !db) {
+  if (!success) {
     return (
       <SafeAreaProvider>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" />
-          <Text style={{ marginTop: 10 }}>Initializing...</Text>
-        </View>
+        <FullScreenLoading message="Initializing..." />
       </SafeAreaProvider>
     );
   }
 
   return (
     <QueryProvider>
-      <Suspense fallback={<ActivityIndicator size="large" />}>
+      <Suspense fallback={<FullScreenLoading message="Loading app..." />}>
         <SQLiteProvider
           databaseName={DATABASE_NAME}
           options={{ enableChangeListener: true }}

@@ -1,12 +1,40 @@
-import { Link } from "expo-router";
+import { useMutation } from "@tanstack/react-query";
+import { Link, router } from "expo-router";
 import React from "react";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { Image, Text, View } from "react-native";
 import Button from "../src/components/ui/Button";
 import Input from "../src/components/ui/Input";
+import { registerUser } from "../src/server/user";
+
+type Inputs = {
+  username: string;
+  password: string;
+};
 
 const Signup = () => {
-  const handleCreateAccount = () => {
-    console.log("Create Account");
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Inputs>();
+
+  const { mutate: createUserMutation } = useMutation({
+    mutationFn: registerUser,
+    onSuccess: () => {
+      router.push("/Login");
+    },
+    onError: (error) => {
+      console.error("Error creating user:", error);
+    },
+  });
+
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    try {
+      createUserMutation(data);
+    } catch (error) {
+      console.error("Error creating user:", error);
+    }
   };
 
   return (
@@ -22,9 +50,35 @@ const Signup = () => {
         <Text className="text-foreground text-4xl font-bold text-center">
           Create Account
         </Text>
-        <Input label="Email" type="email" />
-        <Input label="Password" type="password" />
-        <Button title="Sign up" onPress={handleCreateAccount} />
+        <Controller
+          control={control}
+          name="username"
+          rules={{ required: "Username is required" }}
+          render={({ field: { onChange, value } }) => (
+            <Input
+              label="Username"
+              type="text"
+              value={value}
+              onChangeText={onChange}
+              error={errors.username?.message}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="password"
+          rules={{ required: "Password is required" }}
+          render={({ field: { onChange, value } }) => (
+            <Input
+              label="Password"
+              type="password"
+              value={value}
+              onChangeText={onChange}
+              error={errors.password?.message}
+            />
+          )}
+        />
+        <Button title="Sign up" onPress={handleSubmit(onSubmit)} />
         <Text className="text-foreground text-center text-base">
           Already have an account?{" "}
           <Link href="/Login">

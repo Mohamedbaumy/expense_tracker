@@ -1,21 +1,15 @@
-import { drizzle } from "drizzle-orm/expo-sqlite";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
-import { openDatabaseSync } from "expo-sqlite";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { setupDefaultCategories } from "../../server/categories";
+import { db } from "../database";
 import migrations from "./migrations.js";
-
-export const DATABASE_NAME = "expense_tracker";
 
 export function useDatabaseSetup() {
   const [migrationError, setMigrationError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [db, setDb] = useState<ReturnType<typeof drizzle> | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
-  // Memoize the database instance to prevent recreation on every render
-  const expoDatabase = useMemo(() => openDatabaseSync(DATABASE_NAME), []);
-  const drizzleDb = useMemo(() => drizzle(expoDatabase), [expoDatabase]);
-  
-  const { success, error } = useMigrations(drizzleDb, migrations);
+  const { success, error } = useMigrations(db, migrations);
 
   useEffect(() => {
     if (error) {
@@ -25,17 +19,27 @@ export function useDatabaseSetup() {
 
     if (success) {
       console.log("Migrations completed successfully");
-      setDb(drizzleDb);
-      setIsLoading(false);
+      
+      setupDefaultCategories()
+        .then(() => {
+          console.log("Default categories setup completed");
+          setIsReady(true);
+          setIsLoading(false);
+        })
+        .catch((categoryError) => {
+          console.error("Error setting up default categories:", categoryError);
+          setIsReady(true);
+          setIsLoading(false);
+        });
     } else if (error) {
       setIsLoading(false);
     }
-  }, [success, error]); // Removed drizzleDb from dependencies
+  }, [success, error]);
 
   return {
     db,
     isLoading,
     migrationError,
-    success,
+    success: isReady,
   };
 }

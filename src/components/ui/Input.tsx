@@ -1,13 +1,14 @@
-import { TextInput, TextInputProps, View } from "react-native";
+import { Text, TextInput, TextInputProps, View } from "react-native";
 
 interface InputProps extends TextInputProps {
   label: string;
   icon?: React.ReactNode;
   className?: string;
+  error?: string;
   [key: string]: any;
 }
 
-const Input = ({ label, icon, className, ...props }: InputProps) => {
+const Input = ({ label, icon, className, error, ...props }: InputProps) => {
   return (
     <View className={`relative ${className}`}>
       <TextInput
@@ -21,6 +22,7 @@ const Input = ({ label, icon, className, ...props }: InputProps) => {
           {icon}
         </View>
       )}
+      {error && <Text className="text-red-500 text-sm">{error}</Text>}
     </View>
   );
 };
