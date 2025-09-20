@@ -79,7 +79,6 @@ export default function RootLayout() {
               <Stack.Screen name="Login" />
               <Stack.Screen name="Verify" />
               <Stack.Screen name="Signup" />
-              <Stack.Screen name="Add" />
             </Stack>
           </SafeAreaProvider>
         </SQLiteProvider>

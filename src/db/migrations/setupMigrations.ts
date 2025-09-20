@@ -1,6 +1,5 @@
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { useEffect, useState } from "react";
-import { setupDefaultCategories } from "../../server/categories";
 import { db } from "../database";
 import migrations from "./migrations.js";
 
@@ -15,23 +14,12 @@ export function useDatabaseSetup() {
     if (error) {
       console.error("Migration error details:", error);
       setMigrationError(error.message || "Unknown migration error");
+      setIsLoading(false);
     }
 
     if (success) {
       console.log("Migrations completed successfully");
-      
-      setupDefaultCategories()
-        .then(() => {
-          console.log("Default categories setup completed");
-          setIsReady(true);
-          setIsLoading(false);
-        })
-        .catch((categoryError) => {
-          console.error("Error setting up default categories:", categoryError);
-          setIsReady(true);
-          setIsLoading(false);
-        });
-    } else if (error) {
+      setIsReady(true);
       setIsLoading(false);
     }
   }, [success, error]);

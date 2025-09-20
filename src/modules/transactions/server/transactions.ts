@@ -1,14 +1,11 @@
 import { and, count, desc, eq, gte, lte, or } from "drizzle-orm";
-import { db } from "../db/database";
-import { categoriesTable, transactionsTable, usersTable } from "../db/schema";
+import { db } from "../../../db/database";
+import { categoriesTable, transactionsTable, usersTable } from "../../../db/schema";
 
 // Types for better type safety
-export type Transaction = typeof transactionsTable.$inferSelect;
 export type TransactionInsert = typeof transactionsTable.$inferInsert;
-export type Category = typeof categoriesTable.$inferSelect;
 export type CategoryInsert = typeof categoriesTable.$inferInsert;
 
-// Custom error classes for better error handling
 export class TransactionError extends Error {
   constructor(message: string, public code: string = "TRANSACTION_ERROR") {
     super(message);
@@ -30,7 +27,6 @@ export class NotFoundError extends Error {
   }
 }
 
-// Validation functions
 const validateTransaction = (transaction: Partial<TransactionInsert>): void => {
   if (!transaction.title || transaction.title.trim().length === 0) {
     throw new ValidationError("Title is required", "title");
@@ -73,18 +69,15 @@ const validateCategory = (category: Partial<CategoryInsert>): void => {
   }
 };
 
-// Transaction CRUD Operations
 export const createTransaction = async (transactionData: TransactionInsert): Promise<Transaction> => {
   try {
     validateTransaction(transactionData);
     
-    // Check if user exists
     const user = await db.select().from(usersTable).where(eq(usersTable.id, transactionData.userId));
     if (user.length === 0) {
       throw new NotFoundError("User", transactionData.userId);
     }
     
-    // Check if category exists
     const category = await db.select().from(categoriesTable).where(eq(categoriesTable.id, transactionData.categoryId));
     if (category.length === 0) {
       throw new NotFoundError("Category", transactionData.categoryId);
@@ -167,11 +160,9 @@ export const getTransactions = async (
     if (search) {
       conditions.push(or(
         eq(transactionsTable.title, search),
-        // Add more search conditions if needed
       ));
     }
     
-    // Get total count
     const totalResult = await db
       .select({ count: count() })
       .from(transactionsTable)
@@ -179,7 +170,6 @@ export const getTransactions = async (
     
     const total = totalResult[0]?.count || 0;
     
-    // Get transactions with pagination
     const transactions = await db
       .select()
       .from(transactionsTable)
@@ -201,14 +191,11 @@ export const updateTransaction = async (
   updateData: Partial<TransactionInsert>
 ): Promise<Transaction> => {
   try {
-    // Check if transaction exists and belongs to user
     const existingTransaction = await getTransaction(id, userId);
     
-    // Validate update data
     const updatedTransaction = { ...existingTransaction, ...updateData };
     validateTransaction(updatedTransaction);
     
-    // Check if category exists (if categoryId is being updated)
     if (updateData.categoryId && updateData.categoryId !== existingTransaction.categoryId) {
       const category = await db.select().from(categoriesTable).where(eq(categoriesTable.id, updateData.categoryId));
       if (category.length === 0) {
@@ -238,7 +225,6 @@ export const updateTransaction = async (
 
 export const deleteTransaction = async (id: number, userId: number): Promise<void> => {
   try {
-    // Check if transaction exists and belongs to user
     await getTransaction(id, userId);
     
     const result = await db
@@ -257,12 +243,10 @@ export const deleteTransaction = async (id: number, userId: number): Promise<voi
   }
 };
 
-// Category CRUD Operations
 export const createCategory = async (categoryData: CategoryInsert): Promise<Category> => {
   try {
     validateCategory(categoryData);
     
-    // Check if category already exists
     const existingCategory = await db
       .select()
       .from(categoriesTable)
@@ -328,14 +312,11 @@ export const getCategory = async (id: number): Promise<Category> => {
 
 export const updateCategory = async (id: number, updateData: Partial<CategoryInsert>): Promise<Category> => {
   try {
-    // Check if category exists
     await getCategory(id);
     
-    // Validate update data
     if (updateData.title) {
       validateCategory(updateData);
       
-      // Check if new title already exists
       const existingCategory = await db
         .select()
         .from(categoriesTable)
@@ -371,10 +352,8 @@ export const updateCategory = async (id: number, updateData: Partial<CategoryIns
 
 export const deleteCategory = async (id: number): Promise<void> => {
   try {
-    // Check if category exists
     await getCategory(id);
     
-    // Check if category is being used by any transactions
     const transactionsUsingCategory = await db
       .select({ count: count() })
       .from(transactionsTable)
@@ -400,7 +379,7 @@ export const deleteCategory = async (id: number): Promise<void> => {
   }
 };
 
-// Utility functions
+
 export const getTransactionStats = async (userId: number, startDate?: string, endDate?: string) => {
   try {
     const conditions = [eq(transactionsTable.userId, userId)];

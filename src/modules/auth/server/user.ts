@@ -2,10 +2,8 @@ import * as bcrypt from "bcryptjs";
 import { count, eq } from "drizzle-orm";
 import { getRandomBytes } from 'expo-random';
 import * as SecureStore from 'expo-secure-store';
-import { db, SESSION_KEY } from "../db/database";
-import { usersTable } from "../db/schema";
-
-
+import { db, SESSION_KEY } from "../../../db/database";
+import { usersTable } from "../../../db/schema";
 
 export const getUser = async (id: number) => {
   const user = await db.select().from(usersTable).where(eq(usersTable.id, id));
