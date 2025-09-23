@@ -1,5 +1,4 @@
 import { SESSION_KEY } from "@/src/db/database";
-import { TransactionScreen } from "@/src/modules/transactions";
 import { Redirect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 
@@ -10,5 +9,5 @@ export default function Index() {
     return <Redirect href="/Login" />;
   }
 
-  return <TransactionScreen />;
+  return <Redirect href="/(tabs)" />;
 }
