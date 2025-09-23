@@ -26,8 +26,9 @@ export const TransactionScreen: React.FC = () => {
   const [transactionMode, setTransactionMode] = useState<"create" | "edit">(
     "create"
   );
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<Transaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<
+    Transaction | undefined
+  >(undefined);
 
   const { data: user } = useQuery({
     queryKey: ["user", session],
@@ -54,7 +55,7 @@ export const TransactionScreen: React.FC = () => {
 
   const handleCreateTransaction = () => {
     setTransactionMode("create");
-    setSelectedTransaction(null);
+    setSelectedTransaction(undefined);
     setShowTransactionManager(true);
   };
 
@@ -66,7 +67,7 @@ export const TransactionScreen: React.FC = () => {
 
   const handleCloseTransactionManager = () => {
     setShowTransactionManager(false);
-    setSelectedTransaction(null);
+    setSelectedTransaction(undefined);
   };
 
   // Create data for FlatList sections

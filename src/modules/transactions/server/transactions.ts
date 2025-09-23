@@ -1,10 +1,17 @@
-import { and, count, desc, eq, gte, lte, or } from "drizzle-orm";
+import { and, count, desc, eq, gte, like, lte } from "drizzle-orm";
 import { db } from "../../../db/database";
 import { categoriesTable, transactionsTable, usersTable } from "../../../db/schema";
+import { Category, Transaction } from "../types";
 
 // Types for better type safety
 export type TransactionInsert = typeof transactionsTable.$inferInsert;
 export type CategoryInsert = typeof categoriesTable.$inferInsert;
+
+// Helper function to cast database result to Transaction type
+const castToTransaction = (dbResult: any): Transaction => ({
+  ...dbResult,
+  type: dbResult.type as "income" | "expense"
+});
 
 export class TransactionError extends Error {
   constructor(message: string, public code: string = "TRANSACTION_ERROR") {
@@ -92,7 +99,7 @@ export const createTransaction = async (transactionData: TransactionInsert): Pro
       throw new TransactionError("Failed to create transaction");
     }
     
-    return result[0];
+    return castToTransaction(result[0]);
   } catch (error) {
     if (error instanceof ValidationError || error instanceof NotFoundError) {
       throw error;
@@ -113,7 +120,7 @@ export const getTransaction = async (id: number, userId: number): Promise<Transa
       throw new NotFoundError("Transaction", id);
     }
     
-    return result[0];
+    return castToTransaction(result[0]);
   } catch (error) {
     if (error instanceof NotFoundError) {
       throw error;
@@ -158,9 +165,7 @@ export const getTransactions = async (
     }
     
     if (search) {
-      conditions.push(or(
-        eq(transactionsTable.title, search),
-      ));
+      conditions.push(like(transactionsTable.title, `%${search}%`));
     }
     
     const totalResult = await db
@@ -178,7 +183,7 @@ export const getTransactions = async (
       .limit(limit)
       .offset(offset);
     
-    return { transactions, total };
+    return { transactions: transactions.map(castToTransaction), total };
   } catch (error) {
     console.error("Error fetching transactions:", error);
     throw new TransactionError("Failed to fetch transactions");
@@ -213,7 +218,7 @@ export const updateTransaction = async (
       throw new TransactionError("Failed to update transaction");
     }
     
-    return result[0];
+    return castToTransaction(result[0]);
   } catch (error) {
     if (error instanceof ValidationError || error instanceof NotFoundError || error instanceof TransactionError) {
       throw error;
@@ -265,7 +270,7 @@ export const createCategory = async (categoryData: CategoryInsert): Promise<Cate
       throw new TransactionError("Failed to create category");
     }
     
-    return result[0];
+    return castToTransaction(result[0]);
   } catch (error) {
     if (error instanceof ValidationError || error instanceof TransactionError) {
       throw error;
@@ -300,7 +305,7 @@ export const getCategory = async (id: number): Promise<Category> => {
       throw new NotFoundError("Category", id);
     }
     
-    return result[0];
+    return castToTransaction(result[0]);
   } catch (error) {
     if (error instanceof NotFoundError) {
       throw error;
@@ -340,7 +345,7 @@ export const updateCategory = async (id: number, updateData: Partial<CategoryIns
       throw new TransactionError("Failed to update category");
     }
     
-    return result[0];
+    return castToTransaction(result[0]);
   } catch (error) {
     if (error instanceof ValidationError || error instanceof NotFoundError || error instanceof TransactionError) {
       throw error;

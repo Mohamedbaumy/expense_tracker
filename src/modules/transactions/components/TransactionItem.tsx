@@ -1,3 +1,4 @@
+import BottomSheet from "@/src/components/ui/BottomSheet";
 import { SESSION_KEY } from "@/src/db/database";
 import { cn } from "@/src/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +20,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
 }) => {
   const isIncome = transaction.type === "income";
   const [showActions, setShowActions] = useState(false);
+  const [showDeleteSheet, setShowDeleteSheet] = useState(false);
 
   // Get user session
   const session = SecureStore.getItem(SESSION_KEY);
@@ -48,18 +50,12 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   });
 
   const handleDelete = () => {
-    Alert.alert(
-      "Delete Transaction",
-      "Are you sure you want to delete this transaction?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => deleteTransactionMutation.mutate(transaction.id),
-        },
-      ]
-    );
+    setShowDeleteSheet(true);
+  };
+
+  const confirmDelete = () => {
+    deleteTransactionMutation.mutate(transaction.id);
+    setShowDeleteSheet(false);
   };
 
   const handleEdit = () => {
@@ -159,6 +155,51 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
           </View>
         </View>
       )}
+
+      {/* Delete Confirmation Bottom Sheet */}
+      <BottomSheet
+        visible={showDeleteSheet}
+        onClose={() => setShowDeleteSheet(false)}
+        title="Delete Transaction"
+      >
+        <View className="p-6">
+          <View className="items-center mb-6">
+            <View className="w-16 h-16 bg-red-100 rounded-full items-center justify-center mb-4">
+              <Ionicons name="trash-outline" size={32} color="#E25548" />
+            </View>
+            <Text className="text-foreground text-lg font-semibold text-center mb-2">
+              Delete Transaction
+            </Text>
+            <Text className="text-muted text-center leading-6">
+              Are you sure you want to delete &ldquo;{transaction.title}&rdquo;?
+              This action cannot be undone.
+            </Text>
+          </View>
+
+          <View className="gap-3">
+            <TouchableOpacity
+              onPress={confirmDelete}
+              disabled={deleteTransactionMutation.isPending}
+              className="bg-red-600 py-4 rounded-lg items-center"
+            >
+              <Text className="text-white font-semibold text-base">
+                {deleteTransactionMutation.isPending
+                  ? "Deleting..."
+                  : "Delete Transaction"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowDeleteSheet(false)}
+              className="bg-secondary py-4 rounded-lg items-center"
+            >
+              <Text className="text-foreground font-semibold text-base">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </BottomSheet>
     </View>
   );
 };

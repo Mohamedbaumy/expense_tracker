@@ -63,9 +63,10 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
         }),
       ]).start();
     }
-  }, [visible]);
+  }, [visible, translateY, opacity]);
 
   const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: (_, gestureState) => {
       return Math.abs(gestureState.dy) > 5;
     },
@@ -108,13 +109,10 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
           style={{
             transform: [{ translateY }],
             maxHeight: MAX_HEIGHT,
-            minHeight: MIN_HEIGHT,
           }}
           className="bg-background rounded-t-3xl shadow-2xl"
-          {...panResponder.panHandlers}
         >
-          {/* Handle bar */}
-          <View className="items-center py-3">
+          <View className="items-center py-3" {...panResponder.panHandlers}>
             <View className="w-12 h-1 bg-muted rounded-full" />
           </View>
 
@@ -129,12 +127,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
             </TouchableOpacity>
           </View>
 
-          {/* Content */}
-          <ScrollView
-            className="flex-1"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
+          <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
             {children}
           </ScrollView>
         </Animated.View>
